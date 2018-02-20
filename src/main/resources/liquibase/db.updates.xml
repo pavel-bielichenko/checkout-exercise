@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.3.xsd">
+
+    <changeSet author="pavlo.bielichenko" id="1">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="OFFER"/>
+            </not>
+        </preConditions>
+        <createTable tableName="OFFER">
+            <column name="ITEM_NAME" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="ITEM_PKEY"/>
+            </column>
+            <column name="ITEM_PRICE" type="NUMERIC(19,2)"/>
+            <column name="QUANTITY" type="INT"/>
+            <column name="PRICE" type="NUMERIC(19,2)"/>
+        </createTable>
+        <rollback/>
+    </changeSet>
+
+</databaseChangeLog>

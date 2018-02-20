@@ -1,0 +1,135 @@
+group 'com.idealo'
+version '1.0'
+
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'checkstyle'
+apply plugin: 'spring-cloud-contract'
+
+sourceCompatibility = 1.8
+
+buildscript {
+    repositories {
+        mavenCentral()
+        mavenLocal()
+        maven { url "http://repo.spring.io/release" }
+    }
+    dependencies {
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion"
+        classpath "org.springframework.cloud:spring-cloud-contract-gradle-plugin:$springContractVerifierVersion"
+    }
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion"
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+
+configurations {
+    compile.exclude module: 'spring-boot-starter-tomcat'
+}
+
+// Common
+dependencies {
+    compile group: 'javax.ws.rs', name: 'javax.ws.rs-api', version: '2.1'
+    compile group: 'javax.validation', name: 'validation-api', version: '2.0.1.Final'
+    compileOnly "org.projectlombok:lombok:$lombokVersion"
+
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion"
+    compile "com.google.guava:guava:$guavaVersion"
+    compile "com.google.code.gson:gson:$gsonVersion"
+}
+
+// Spring
+dependencies {
+
+    compile "org.springframework.boot:spring-boot-starter-jersey"
+    compile "org.springframework.boot:spring-boot-starter-web"
+    compile "org.springframework.boot:spring-boot-starter-undertow"
+    compile 'org.springframework.boot:spring-boot-starter-actuator'
+    compile "org.springframework.boot:spring-boot-starter-data-jpa"
+    compile "org.springframework.boot:spring-boot-autoconfigure"
+    compile "org.springframework.boot:spring-boot-starter-data-jpa"
+}
+
+//Test
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testCompile "org.projectlombok:lombok:$lombokVersion"
+    testCompile "org.springframework.cloud:spring-cloud-starter-contract-verifier"
+    testCompile "org.springframework.boot:spring-boot-starter-test"
+    testCompile "org.skyscreamer:jsonassert:$jsonassertVersion"
+    testCompile "cglib:cglib-nodep:$cglibVersion"
+}
+
+// Database
+dependencies {
+    compile "org.liquibase:liquibase-core:$liquibaseVersion"
+
+    compile "org.hibernate:hibernate-core:$hibernateVersion"
+    compile "org.hibernate:hibernate-hikaricp:$hibernateVersion"
+    compile "org.hibernate:hibernate-entitymanager:$hibernateVersion"
+    compile "org.hibernate:hibernate-validator:6.0.7.Final"
+
+    runtime "com.h2database:h2:$h2Version"
+    compile "org.postgresql:postgresql:$postgresqlVersion"
+}
+
+// Jersey
+dependencies {
+    compile "org.glassfish.jersey.core:jersey-server:$jerseyVersion"
+    compile "org.glassfish.jersey.containers:jersey-container-servlet-core:$jerseyVersion"
+    compile "org.glassfish.jersey.containers:jersey-container-servlet:$jerseyVersion"
+    compile "org.glassfish.jersey.ext:jersey-bean-validation:$jerseyVersion"
+    compile "org.glassfish.jersey.ext:jersey-spring3:$jerseyVersion"
+    compile "org.glassfish.jersey.media:jersey-media-json-jackson:$jerseyVersion"
+    compile "org.glassfish.jersey.media:jersey-media-multipart:$jerseyVersion"
+    compile "org.glassfish.jersey.connectors:jersey-apache-connector:$jerseyVersion"
+    compile "org.glassfish.jersey.core:jersey-server:$jerseyVersion"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion"
+}
+
+
+bootRun {
+    systemProperties System.properties
+    systemProperty 'APP_ENV', 'dev'
+}
+
+test {
+    systemProperties System.properties
+    systemProperty 'APP_ENV', 'dev'
+}
+
+compileTestJava {
+    dependsOn { generateContractTests }
+}
+
+test {
+    jvmArgs = project.gradle.startParameter.systemPropertiesArgs.entrySet().collect { "-D${it.key}=${it.value}" }
+    testLogging {
+        exceptionFormat = 'full'
+    }
+    maxParallelForks = Runtime.runtime.availableProcessors() / 2
+}
+
+contracts {
+    testMode = "JaxRsClient"
+    baseClassForTests = "com.idealo.base.WebBaseTest"
+    basePackageForTests = 'accurest'
+    contractsDslDir = file("src/test/contracts")
+    generatedTestSourcesDir = file("${project.buildDir}/generated-sources/contracts")
+}
+
+checkstyle {
+    toolVersion = checkstyleVersion
+    configFile = rootProject.file('checkstyle.xml')
+}
+
+// Avoid running checkstyle on generated sources
+checkstyleTest.source = "src/test/java"
